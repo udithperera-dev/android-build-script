@@ -1,0 +1,120 @@
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
+def flutterVersionCode = localProperties.getProperty('flutter.versionCode')
+if (flutterVersionCode == null) {
+    flutterVersionCode = '1'
+}
+
+def flutterVersionName = localProperties.getProperty('flutter.versionName')
+if (flutterVersionName == null) {
+    flutterVersionName = '1.0'
+}
+
+apply plugin: 'com.android.application'
+apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+android {
+    compileSdkVersion 31
+
+    //may be add, if get error
+    lintOptions {
+        disable 'InvalidPackage'
+        checkReleaseBuilds false
+    }
+
+    defaultConfig {
+        applicationId "com.subdomain.domain"
+            minSdkVersion 21//just pay
+        targetSdkVersion 31
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
+        multiDexEnabled true
+        //ndk.abiFilters 'armeabi-v7a', 'arm64-v8a','x86_64'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    //must add
+    signingConfigs {
+        release {
+            keyAlias 'domain'
+            keyPassword 'domain_keystore_password'
+            storeFile file('/home/.../domain_keystore')
+            storePassword 'domain_keystore_password'
+        }
+        debug {
+            storeFile file('/home/.../domain_keystore')
+            keyAlias = 'domain'
+            storePassword 'domain_keystore_password'
+            keyPassword 'domain_keystore_password'
+        }
+    }
+
+    //As per your choice
+    buildTypes {
+        release {
+            shrinkResources false // shrink
+            minifyEnabled true
+            useProguard false // obfuscate
+            consumerProguardFiles 'proguard-rules.pro'
+            proguardFiles 'proguard-rules.pro', getDefaultProguardFile('proguard-android.txt')
+            signingConfig signingConfigs.release
+            android.applicationVariants.all { variant ->
+                variant.outputs.all {
+                    def date = new Date();
+                    def formattedDate = date.format('yyyy-MM-dd_HH-mm-ss')
+                    if(variant.name == "uatRelease"){
+                        outputFileName = "UAT_DOMAIN_${variant.name}_${variant.versionName}+${variant.versionCode}v_${formattedDate}.apk"
+                    }else{
+                        outputFileName = "LIVE_DOMAIN_${variant.name}_${variant.versionName}+${variant.versionCode}v_${formattedDate}.apk"
+                    }
+                }
+            }
+        }
+    }
+
+    //must add
+    flavorDimensions "Domain"
+    productFlavors {
+        uat {
+            dimension "Domain"
+//            applicationIdSuffix ".dev"
+//            resValue "string", "app_name", "Counter App Dev"
+            versionNameSuffix ""
+        }
+        prod {
+            dimension "Domain"
+            versionNameSuffix ""
+        }
+    }
+
+}
+
+flutter {
+    source '../..'
+}
+
+dependencies {
+    .... Your dependencies.....
+}
+apply plugin: .... Your dependencies.....
